@@ -1,7 +1,8 @@
 const gulp = require('gulp');
+// const gulpPug = require('gulp-pug');
 const gulpPlumber = require('gulp-plumber');
 const gulpSass = require('gulp-sass');
-const gulpApfr = require('gulp-autoprefixer');
+const gulpAutoprefixer = require('gulp-autoprefixer');
 const cleanCSS = require('gulp-clean-css');
 const imagemin = require('gulp-imagemin');
 const svgSprite = require('gulp-svg-sprite');
@@ -11,11 +12,20 @@ const browserSync = require('browser-sync').create();
 
 let isBuild = false
 
+// function pug2html() {
+//   return gulp.src('parts/pug/pages/*.pug')
+//     .pipe(gulpPlumber())
+//     .pipe(gulpPug({
+//       pretty: true
+//     }))
+//     .pipe(gulpPlumber.stop())
+//     .pipe(gulp.dest('ready'));
+// }
 function sass2css() {
-  return gulp.src('sass/main.scss')
+  return gulp.src('parts/styles/styles.scss')
     .pipe(gulpPlumber())
     .pipe(gulpSass())
-    .pipe(gulpApfr())
+    .pipe(gulpAutoprefixer())
     .pipe(cleanCSS({
       level: 2,
       format: 'beautify'
@@ -24,11 +34,11 @@ function sass2css() {
     .pipe(gulpPlumber.stop())
     .pipe(browserSync.stream())
 
-    .pipe(gulp.dest('css'));
+    .pipe(gulp.dest('ready/css'));
 }
 
 function imageMin() {
-  return gulp.src("img/dist/**/*.{jpg,png,svg}", "!img/dist/sprite/**/*")
+  return gulp.src("parts/img/**/*.{jpg,png,svg}", "!parts/img/sprite/**/*")
     .pipe(gulpIf(isBuild, imagemin([
       imagemin.gifsicle({ interlaced: true }),
       imagemin.mozjpeg({ quality: 75, progressive: true }),
@@ -43,11 +53,11 @@ function imageMin() {
       })
     ]))
     )
-    .pipe(gulp.dest('img'))
+    .pipe(gulp.dest('ready/img'))
 }
 
 function svgSpriteBuild() {
-  return gulp.src("img/sprite/*.svg")
+  return gulp.src("parts/img/sprite/*.svg")
     .pipe(replace('&gt;', '>'))
     .pipe(svgSprite({
       mode: {
@@ -56,7 +66,7 @@ function svgSpriteBuild() {
         }
       }
     }))
-    .pipe(gulp.dest("img"));
+    .pipe(gulp.dest("ready/img"));
 };
 
 function buildMode(redyMode) {
@@ -66,18 +76,17 @@ function buildMode(redyMode) {
   }
 }
 
-
 function watch() {
   browserSync.init({
     server: {
-      baseDir: "./"
+      baseDir: 'ready'
     }
   });
-  gulp.watch("sass/**/*.scss", sass2css);
-  gulp.watch("css/*.css").on('change', browserSync.reload);
-  gulp.watch("[img/dist/*.{jpg,png,svg}, !img/sprite/**/*]", imageMin);
-  gulp.watch("img/sprite/**/*.svg", svgSpriteBuild);
-  gulp.watch("*.html").on('change', browserSync.reload);
+  // gulp.watch("parts/pug/**/*.pug", pug2html);
+  gulp.watch("parts/styles/**/*.scss", sass2css);
+  gulp.watch("[img/**/*.{jpg,png,svg}, !img/sprite/**/*]", imageMin);
+  gulp.watch("img/sprite/**/*", svgSpriteBuild);
+  gulp.watch("ready/*.html").on('change', browserSync.reload);
 }
 
 const dev = gulp.parallel(sass2css, imageMin, svgSpriteBuild)
